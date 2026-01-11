@@ -58,7 +58,7 @@ if st.session_state.screen == "setup":
 
     st.subheader("Players")
     names = []
-    for i in range(3, 9):
+    for i in range(3, 20):
         name = st.text_input(f"Player {i-2}", key=f"name_{i}")
         if name:
             names.append(name.strip())
