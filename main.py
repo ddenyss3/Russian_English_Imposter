@@ -90,16 +90,9 @@ elif st.session_state.screen == "pass":
     st.markdown(f"## **{p['name']}**")
     st.warning("Make sure nobody else is looking")
 
-    # initialize flag once
-    if "pass_confirmed" not in st.session_state:
-        st.session_state.pass_confirmed = False
-
-    # only show button if not yet clicked
-    if not st.session_state.pass_confirmed:
-        if st.button(f"I am {p['name']}"):
-            st.session_state.pass_confirmed = True
-            st.session_state.screen = "reveal"
-            st.rerun()
+    if st.button(f"I am {p['name']}"):
+        st.session_state.screen = "reveal"
+        st.rerun()
 
 # ---------------- REVEAL ---------------- #
 
