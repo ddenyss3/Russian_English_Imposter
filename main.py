@@ -86,14 +86,20 @@ if st.session_state.screen == "setup":
 
 elif st.session_state.screen == "pass":
     p = st.session_state.players[st.session_state.current_player]
-
     st.header("Pass to")
     st.markdown(f"## **{p['name']}**")
     st.warning("Make sure nobody else is looking")
 
-    if st.button(f"I am {p['name']}"):
-        st.session_state.screen = "reveal"
-        st.rerun()
+    # initialize flag once
+    if "pass_confirmed" not in st.session_state:
+        st.session_state.pass_confirmed = False
+
+    # only show button if not yet clicked
+    if not st.session_state.pass_confirmed:
+        if st.button(f"I am {p['name']}"):
+            st.session_state.pass_confirmed = True
+            st.session_state.screen = "reveal"
+            st.rerun()
 
 # ---------------- REVEAL ---------------- #
 
