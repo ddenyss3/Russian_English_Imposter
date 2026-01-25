@@ -181,14 +181,12 @@ def full_reset():
     st.rerun()
 
 def play_again():
-    """Resets game logic but KEEPS names."""
+    """Returns to setup while explicitly keeping the names."""
+    # We change the screen but do NOT delete the name_i keys
     st.session_state.screen = "setup"
     st.session_state.votes = set()
     st.session_state.current_player = 0
-    # We clear the active players list so it regenerates on 'Start Game',
-    # but the st.text_input values (which are separate) remain in session_state
-    if "players" in st.session_state:
-        del st.session_state["players"]
+    st.session_state.players = [] 
     st.rerun()
 
 # ---------------- SETUP ---------------- #
