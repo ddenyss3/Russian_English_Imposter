@@ -174,9 +174,21 @@ if "screen" not in st.session_state:
 
 # ---------------- HELPERS ---------------- #
 
-def reset_game():
+def full_reset():
+    """Wipes everything, including names."""
     for k in list(st.session_state.keys()):
         del st.session_state[k]
+    st.rerun()
+
+def play_again():
+    """Resets game logic but KEEPS names."""
+    st.session_state.screen = "setup"
+    st.session_state.votes = set()
+    st.session_state.current_player = 0
+    # We clear the active players list so it regenerates on 'Start Game',
+    # but the st.text_input values (which are separate) remain in session_state
+    if "players" in st.session_state:
+        del st.session_state["players"]
     st.rerun()
 
 # ---------------- SETUP ---------------- #
@@ -184,34 +196,49 @@ def reset_game():
 if st.session_state.screen == "setup":
     st.title("🕵️ Imposter")
 
-    category = st.selectbox("Difficulty", list(CATEGORIES.keys()))
-    imposter_count = st.selectbox("Number of Imposters", [1, 2, 3])
+    col1, col2 = st.columns(2)
+    with col1:
+        category = st.selectbox("Difficulty", list(CATEGORIES.keys()))
+    with col2:
+        imposter_count = st.selectbox("Number of Imposters", [1, 2, 3])
 
     st.subheader("Players")
-    names = []
-    for i in range(3, 23):
-        name = st.text_input(f"Player {i-2}", key=f"name_{i}")
-        if name:
-            names.append(name.strip())
+    
+    # Use an expander so it's collapsed by default if replaying
+    with st.expander("Edit Player Names", expanded=True):
+        names = []
+        for i in range(3, 23):
+            # Streamlit text_input retains value automatically in session_state
+            # if we don't delete the key.
+            name = st.text_input(f"Player {i-2}", key=f"name_{i}")
+            if name:
+                names.append(name.strip())
 
-    if st.button("Start Game"):
-        if len(names) < 3:
-            st.error("Need at least 3 players")
-        elif imposter_count >= len(names):
-            st.error("Too many imposters")
-        else:
-            secret_word = random.choice(CATEGORIES[category])
-            players = [{"name": n, "role": "citizen", "word": secret_word} for n in names]
+    col_start, col_reset = st.columns([3, 1])
+    
+    with col_start:
+        if st.button("Start Game", type="primary", use_container_width=True):
+            if len(names) < 3:
+                st.error("Need at least 3 players")
+            elif imposter_count >= len(names):
+                st.error("Too many imposters")
+            else:
+                secret_word = random.choice(CATEGORIES[category])
+                players = [{"name": n, "role": "citizen", "word": secret_word} for n in names]
 
-            for p in random.sample(players, imposter_count):
-                p["role"] = "imposter"
-                p["word"] = IMPOSTER_WORD
+                for p in random.sample(players, imposter_count):
+                    p["role"] = "imposter"
+                    p["word"] = IMPOSTER_WORD
 
-            st.session_state.players = players
-            st.session_state.category = category
-            st.session_state.current_player = 0
-            st.session_state.screen = "pass"
-            st.rerun()
+                st.session_state.players = players
+                st.session_state.category = category
+                st.session_state.current_player = 0
+                st.session_state.screen = "pass"
+                st.rerun()
+                
+    with col_reset:
+        if st.button("New Group", help="Clear all names"):
+            full_reset()
 
 # ---------------- PASS ---------------- #
 
@@ -289,6 +316,15 @@ elif st.session_state.screen == "results":
     st.title("📊 Results")
 
     word = st.session_state.players[0]["word"]
+    
+    # Check if the imposter word was assigned (should be consistent, but good to handle edge cases)
+    if word == IMPOSTER_WORD:
+        # If the first player was imposter, grab the word from a citizen
+        for p in st.session_state.players:
+            if p["role"] == "citizen":
+                word = p["word"]
+                break
+                
     st.info(f"Secret Word: {word['en']} / {word['ru']}")
 
     for p in st.session_state.players:
@@ -296,5 +332,10 @@ elif st.session_state.screen == "results":
         voted = "❌ VOTED OUT" if p["name"] in st.session_state.votes else ""
         st.write(f"**{p['name']}** → {label} {voted}")
 
-    if st.button("Play Again"):
-        reset_game()
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Play Again (Same Names)", type="primary", use_container_width=True):
+            play_again()
+    with col2:
+        if st.button("New Group"):
+            full_reset()
